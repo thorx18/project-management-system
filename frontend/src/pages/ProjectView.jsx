@@ -9,8 +9,30 @@ import IncomingCallOverlay from '../components/IncomingCallOverlay';
 import { Plus, X, Circle, Clock, Eye, CheckCircle2, MessageSquare, Calendar, UserPlus, Trash2, Video, Send, MoreHorizontal, Filter } from 'lucide-react';
 import io from 'socket.io-client';
 
+// ─── Socket.IO Connection ───
+// In production (Docker): connects through nginx proxy on same origin → no CORS issues
+// In development: connects directly to backend
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
-const socket = io(BACKEND_URL);
+const isProduction = import.meta.env.PROD;
+
+const socket = io(isProduction ? window.location.origin : BACKEND_URL, {
+    // ─── Reconnection for remote/unstable networks ───
+    reconnection: true,
+    reconnectionAttempts: Infinity,
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 10000,
+    timeout: 20000,
+    // Prefer WebSocket, fallback to polling
+    transports: ['websocket', 'polling'],
+    upgrade: true,
+});
+
+// Connection status logging (helps debug remote issues)
+socket.on('connect', () => console.log('🔌 Socket connected:', socket.id));
+socket.on('disconnect', (reason) => console.warn('🔌 Socket disconnected:', reason));
+socket.on('connect_error', (err) => console.error('🔌 Socket connection error:', err.message));
+socket.on('reconnect_attempt', (n) => console.log(`🔌 Reconnecting... attempt ${n}`));
+socket.on('reconnect', (n) => console.log(`🔌 Reconnected after ${n} attempts`));
 const priorityColors = { urgent: '#f87171', high: '#fb923c', medium: '#facc15', low: '#4ade80' };
 const statusConfig = {
     todo: { label: 'To Do', icon: Circle, color: 'var(--text-muted)', gradient: 'linear-gradient(135deg, #64748b, #475569)' },

@@ -1,10 +1,15 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// In production: API calls go through nginx proxy on same origin → zero CORS issues
+// In development: calls go directly to the backend
+const API_URL = import.meta.env.PROD
+    ? `${window.location.origin}/api`
+    : (import.meta.env.VITE_API_URL || 'http://localhost:5000/api');
 
 const api = axios.create({
     baseURL: API_URL,
     headers: { 'Content-Type': 'application/json' },
+    timeout: 30000, // 30s timeout for slow remote networks
 });
 
 api.interceptors.request.use((config) => {
@@ -17,6 +22,12 @@ api.interceptors.response.use((res) => res, (error) => {
     if (error.response?.status === 401) {
         localStorage.removeItem('token');
         window.location.href = '/login';
+    }
+    // Better error messages for network issues
+    if (error.code === 'ECONNABORTED') {
+        error.message = 'Request timed out — check your network connection';
+    } else if (!error.response) {
+        error.message = 'Cannot reach server — check if backend is running';
     }
     return Promise.reject(error);
 });

@@ -175,7 +175,9 @@ export default function VideoCall({
             setAgoraStatus('Fetching token...');
             let token = null;
             try {
-                const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+                const backendUrl = import.meta.env.PROD
+                    ? window.location.origin
+                    : (import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000');
                 const tokenRes = await fetch(`${backendUrl}/api/agora/token?channelName=${encodeURIComponent(channel)}&uid=${uid}`);
                 const tokenData = await tokenRes.json();
                 if (tokenData.token) {

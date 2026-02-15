@@ -6,16 +6,39 @@ require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
-const corsOrigin = process.env.CORS_ORIGIN || "http://localhost:5173";
+
+// ─── CORS: Support multiple origins for remote deployment ───
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean);
+
+const corsOptions = {
+    origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, server-to-server, nginx proxy)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin) || allowedOrigins.includes('*')) {
+            return callback(null, true);
+        }
+        console.warn(`⚠️ CORS blocked origin: ${origin}`);
+        return callback(null, false);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+
 const io = socketIo(server, {
-    cors: {
-        origin: corsOrigin,
-        methods: ["GET", "POST", "PUT", "DELETE"]
-    }
+    cors: corsOptions,
+    // ─── Stable WebSocket over remote networks ───
+    pingTimeout: 60000,       // Wait 60s before considering connection dead
+    pingInterval: 25000,      // Ping every 25s to keep connection alive
+    transports: ['websocket', 'polling'],  // Prefer WebSocket, fallback to polling
+    allowUpgrades: true
 });
 
 // Middleware
-app.use(cors({ origin: corsOrigin }));
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -191,8 +214,11 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-server.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
+// Bind to 0.0.0.0 so the server accepts connections from outside the container
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
+    console.log(`   CORS origins: ${allowedOrigins.join(', ')}`);
+    console.log(`   Agora: ${process.env.AGORA_APP_ID ? '✅ configured' : '❌ not set'}`);
 });
 
 module.exports = { app, io };
