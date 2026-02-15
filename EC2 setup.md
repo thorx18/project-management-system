@@ -196,12 +196,8 @@ docker compose down -v
 
 ---
 
-## 📝 Notes
-
-- Always use your actual EC2 public IP address in place of `YOUR_EC2_PUBLIC_IP`
-- Ensure security groups allow traffic on required ports
-- First build may take several minutes
-- Use `docker compose logs -f` to monitor application startup
+# important 
+In docker compose yaml file add agora id and certificate on both frontend and backend
 
 ---
 
