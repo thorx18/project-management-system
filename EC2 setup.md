@@ -199,6 +199,62 @@ docker compose down -v
 # important 
 In docker compose yaml file add agora id and certificate on both frontend and backend
 
+&&&
+
+
+🔐 🔥 10️⃣ Install ngrok for HTTPS
+
+Download ngrok:
+
+wget https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-v3-stable-linux-amd64.zip
+
+
+Unzip:
+
+unzip ngrok-v3-stable-linux-amd64.zip
+
+
+Move to system path:
+
+sudo mv ngrok /usr/local/bin
+
+
+Verify:
+
+ngrok version
+
+🔑 11️⃣ Create ngrok Account
+
+Open in browser:
+
+https://dashboard.ngrok.com
+
+
+Create account → Copy your Auth Token.
+
+🔐 12️⃣ Add Auth Token to EC2
+ngrok config add-authtoken YOUR_AUTH_TOKEN
+
+🌐 13️⃣ Start HTTPS Tunnel
+
+Since frontend runs on port 80:
+
+ngrok http 80
+
+
+You will see:
+
+Forwarding https://random-name.ngrok-free.dev -> http://localhost:80
+
+
+Copy the HTTPS URL.
+
+📱 14️⃣ Open HTTPS URL on Mobile
+
+Open:
+
+https://random-name.ngrok-free.dev
+
 ---
 
 ## 🎉 Success!
