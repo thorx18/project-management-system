@@ -1,134 +1,210 @@
-lowBoard – EC2 Production Deployment Script
-🏗 Infrastructure Overview
+# 🚀 Docker Deployment Guide
 
-Frontend: React + Vite (served via Nginx) → Port 80
+Complete guide for deploying the Project Management System on EC2 using Docker and Docker Compose.
 
-Backend: Node.js + Express → Port 5000
+---
 
-Database: MySQL 8 → Port 3306
+## 📋 Prerequisites
 
-Containerization: Docker + Docker Compose
+- EC2 instance running Ubuntu
+- SSH access to the instance
+- Security group configured with ports: 22 (SSH), 80 (HTTP), 5000 (Backend), 3306 (MySQL)
 
-Hosting: AWS EC2 (Ubuntu)
+---
 
-🔐 1. Launch EC2 Instance
+## 🐳 1. Install Docker & Docker Compose
 
-Recommended:
-
-OS: Ubuntu 22.04 / 24.04
-
-Instance Type: t3.medium (recommended) or t2.micro
-
-Security Group Inbound Rules:
-
-22 → SSH
-
-80 → HTTP
-
-5000 → API
-
-🔗 2. Connect to EC2
-ssh ubuntu@YOUR_EC2_PUBLIC_IP
-
-🐳 3. Install Docker & Docker Compose
+```bash
 sudo apt update -y
 sudo apt install -y docker.io docker-compose-plugin
-
 sudo systemctl enable docker
 sudo systemctl start docker
-
 sudo usermod -aG docker ubuntu
+```
 
+---
 
-Reconnect SSH:
+## 🔄 2. Reconnect SSH
 
+After adding user to docker group, reconnect:
+
+```bash
 exit
 ssh ubuntu@YOUR_EC2_PUBLIC_IP
+```
 
+---
 
-Verify installation:
+## ✅ 3. Verify Installation
 
+```bash
 docker --version
 docker compose version
+```
 
-📦 4. Clone Repository
+---
+
+## 📦 4. Clone Repository
+
+```bash
 git clone https://github.com/YOUR_USERNAME/project-management-system.git
 cd project-management-system
+```
 
-⚙️ 5. Configure Environment Variables
+---
 
-Edit docker-compose configuration:
+## ⚙️ 5. Configure Environment Variables
 
+Edit Docker Compose file:
+
+```bash
 nano docker-compose.yml
-
+```
 
 Update the following values using your EC2 public IP:
 
-CORS_ORIGIN: http://YOUR_EC2_PUBLIC_IP
-VITE_API_URL: http://YOUR_EC2_PUBLIC_IP:5000/api
-VITE_BACKEND_URL: http://YOUR_EC2_PUBLIC_IP:5000
+- `CORS_ORIGIN: http://YOUR_EC2_PUBLIC_IP`
+- `VITE_API_URL: http://YOUR_EC2_PUBLIC_IP:5000/api`
+- `VITE_BACKEND_URL: http://YOUR_EC2_PUBLIC_IP:5000`
 
+### Example:
 
-Example:
-
+```yaml
 CORS_ORIGIN: http://3.110.228.200
 VITE_API_URL: http://3.110.228.200:5000/api
 VITE_BACKEND_URL: http://3.110.228.200:5000
+```
 
+Save and exit (`Ctrl+X`, then `Y`, then `Enter`).
 
-Save and exit.
+---
 
-🏗 6. Build Application
+## 🏗 6. Build Application
+
+```bash
 docker compose build --no-cache
+```
 
-▶️ 7. Start Application
+---
+
+## ▶️ 7. Start Application
+
+```bash
 docker compose up -d
+```
 
-🔍 8. Verify Running Containers
+---
+
+## 🔍 8. Verify Running Containers
+
+```bash
 docker ps
+```
 
+### Expected Containers:
 
-Expected output:
+| Container | Port | Status |
+|-----------|------|--------|
+| flowboard-ui | 80 | Up (healthy) |
+| flowboard-api | 5000 | Up (healthy) |
+| flowboard-db | 3306 | Up (healthy) |
 
-flowboard-ui → Port 80
+---
 
-flowboard-api → Port 5000
+## 🌐 9. Access Application
 
-flowboard-db → Port 3306
-
-All containers should show Up (healthy).
-
-🌐 9. Access Application
-
-Frontend:
-
+### Frontend
+```
 http://YOUR_EC2_PUBLIC_IP
+```
 
-
-Backend health check:
-
+### Backend Health Check
+```
 http://YOUR_EC2_PUBLIC_IP:5000/api/health
+```
 
-
-Expected response:
-
+**Expected response:**
+```json
 {"status":"ok"}
+```
 
-🔄 Restart Application
+---
+
+## 🔧 Common Commands
+
+### Restart Application
+```bash
 docker compose down
 docker compose up -d
+```
 
-🧹 Stop Application
+### Stop Application
+```bash
 docker compose down
+```
 
-🚨 Emergency Docker Fix (If Build Fails)
+### View Logs
+```bash
+docker compose logs -f
+```
 
-If you see snapshot or extraction errors:
+### View Specific Container Logs
+```bash
+docker compose logs -f flowboard-api
+docker compose logs -f flowboard-ui
+docker compose logs -f flowboard-db
+```
 
+---
+
+## 🚨 Emergency Docker Fix
+
+If you encounter snapshot or extraction errors during build:
+
+```bash
 sudo systemctl stop docker.service
 sudo systemctl stop docker.socket
 sudo rm -rf /var/lib/docker/buildkit
 sudo systemctl start docker
-
 docker compose build --no-cache
 docker compose up -d
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### Container Not Starting
+```bash
+docker compose logs [container-name]
+```
+
+### Check Container Health
+```bash
+docker inspect --format='{{.State.Health.Status}}' [container-name]
+```
+
+### Rebuild Single Service
+```bash
+docker compose up -d --build [service-name]
+```
+
+### Remove All Containers and Volumes
+```bash
+docker compose down -v
+```
+
+---
+
+## 📝 Notes
+
+- Always use your actual EC2 public IP address in place of `YOUR_EC2_PUBLIC_IP`
+- Ensure security groups allow traffic on required ports
+- First build may take several minutes
+- Use `docker compose logs -f` to monitor application startup
+
+---
+
+## 🎉 Success!
+
+Your application should now be running and accessible via your EC2 public IP address.
